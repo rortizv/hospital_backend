@@ -74,12 +74,10 @@ const actualizarUsuario = async (req, res = response) => {
         }
 
         // Actualizar
-        const campos = req.body;
+        const {pasword, google, email, ...campos } = req.body;
 
-        if (usuarioDB.email === req.body.email) {
-            delete campos.email;
-        } else {
-            const existeEmail = await Usuario.findOne({email:req.body.email});
+        if (usuarioDB.email !== email) {
+            const existeEmail = await Usuario.findOne({email});
             if (existeEmail) {
                 return res.status(400).json({
                     ok: false,
@@ -88,10 +86,9 @@ const actualizarUsuario = async (req, res = response) => {
             }
         }
 
-        delete campos.password;
-        delete campos.google;
+        campos.email = email;
 
-        const usuarioActualizado = await Usuario.findByIdAndUpdate(uid, campos);
+        const usuarioActualizado = await Usuario.findByIdAndUpdate(uid, campos, { new: true });
 
         res.json({
             ok: true,
@@ -107,8 +104,38 @@ const actualizarUsuario = async (req, res = response) => {
     }
 }
 
+const borrarUsuario = async (req, res = response) => {
+
+    const uid = req.params.id;
+
+    try {
+
+        const usuarioDB = await Usuario.findById(uid);
+
+        if(!usuarioDB) {
+            return res.status(404).json({
+                ok: false,
+                message: 'No existe un usuario con ese id'
+            });
+        }
+
+        await Usuario.findByIdAndDelete(uid);
+
+        res.json({
+            ok: true,
+            message: 'Usuario eliminado'
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            message: 'Hable con el Admin'
+        });
+    }
+}
+
 module.exports = {
     getUsuarios,
     crearUsuario,
-    actualizarUsuario
+    actualizarUsuario,
+    borrarUsuario
 }
