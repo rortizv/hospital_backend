@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const Usuario = require('../models/usuario');
 const { generarJWT } = require('../helpers/jwt');
+const { googleVerify } = require('../helpers/google-verify');
 
 
 const login = async( req, res = response ) => {
@@ -17,7 +18,7 @@ const login = async( req, res = response ) => {
         if ( !usuarioDB ) {
             return res.status(404).json({
                 ok: false,
-                msg: 'Email no encontrado'
+                message: 'Email no encontrado'
             });
         }
 
@@ -26,7 +27,7 @@ const login = async( req, res = response ) => {
         if ( !validPassword ) {
             return res.status(400).json({
                 ok: false,
-                msg: 'Contraseña no válida'
+                message: 'Contraseña no válida'
             });
         }
 
@@ -37,20 +38,63 @@ const login = async( req, res = response ) => {
         res.json({
             ok: true,
             token
-        })
+        });
 
     } catch (error) {
         console.log(error);
         res.status(500).json({
             ok: false,
-            msg: 'Hable con el administrador'
-        })
+            message: 'Hable con el administrador'
+        });
     }
 
+}
 
+const googleSignIn = async( req, res = response ) => {
+
+    try {
+        const { email, name, picture } = await googleVerify(req.body.token);
+
+        const usuarioDB = await Usuario.findOne({email});
+        let usuario;
+
+        if (!usuarioDB) {
+            usuario = new Usuario({
+                nombre: name,
+                email,
+                password: '@@@',
+                img: picture,
+                google: true
+            });
+        } else {
+            usuario = usuarioDB;
+            usuario.google = true;
+        }
+
+        // Guardar usuario
+        await usuario.save();
+
+        // Generar TOKEN - JWT
+        const token = await generarJWT(usuario.id);
+
+        res.json({
+            ok: true,
+            email, name, picture,
+            token
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({
+            ok: false,
+            message: 'Token de Google no es válido'
+        });
+    }
+    
 }
 
 
 module.exports = {
-    login
+    login,
+    googleSignIn
 }
