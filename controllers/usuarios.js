@@ -13,7 +13,7 @@ const getUsuarios = async(req, res) => {
         Usuario
             .find({}, 'nombre email role google img')
             .skip(pagInic)
-            .limit(5),
+            .limit(10),
             
         Usuario.countDocuments()
     ]);
@@ -79,7 +79,6 @@ const actualizarUsuario = async (req, res = response) => {
     // TODO: Validar token y comprobar si es el usuario correcto
 
     const uid = req.params.id;
-
 
     try {
 
